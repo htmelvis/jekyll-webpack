@@ -1,0 +1,11 @@
+<FilesMatch "\.(ttf|otf|eot|woff|jpg|png|gif)$">
+  <IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+  </IfModule>
+</FilesMatch>
+
+# Serve Static Assets from Cookie-less Domains
+<IfModule mod_headers.c>
+  RequestHeader unset Cookie
+  Header unset Set-Cookie
+</IfModule>

@@ -1,0 +1,7 @@
+# usnetting.com robots.txt file
+
+User-agent: *
+Disallow: /cgi-bin
+Disallow: /process
+Disallow: /fc
+Sitemap: /sitemap.xml

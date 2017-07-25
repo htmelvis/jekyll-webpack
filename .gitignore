@@ -1,0 +1,10 @@
+.sass-cache
+.idea
+node_modules
+*/.tern-port
+.tern-port
+.idea/
+.sass-lint.yml
+.DS_Store
+_jekyll/static/.DS_Store
+_jekyll/static/img/.DS_Store

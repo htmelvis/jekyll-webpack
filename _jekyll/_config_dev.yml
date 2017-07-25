@@ -1,0 +1,54 @@
+name:
+markdown: kramdown
+email: ""
+baseurl: ""
+request: ""
+cart: ""
+destination: _site
+#Dev Settings
+port: 8080
+
+#To allow mobile phone access via LAN, set these 127's to your computers IP address
+#EXAMPLE
+#url: "http://192.168.1.106:8080/"
+#static: "http://192.168.1.106:8080/static/"
+#cdn: "http://192.168.1.106:8080/cdn/"
+#foxy: "https://secure.usnetting.com/cart"
+#styleguide: "http://192.168.1.106:8080/styleguide/"
+######NOTE: DO NOT push this to repos as it will break everyone else's local dev server!
+
+url: "http://127.0.0.1:8080/"
+static: "http://127.0.0.1:8080/static/"
+cdn: "http://127.0.0.1:8080/cdn/"
+quote: ""
+build: ""
+foxyjs: ""
+foxy: ""
+
+#PHP TESTING BUILD SETTINGS
+#port: 8888
+#url: "http://127.0.0.1:8888/"
+#static: "http://127.0.0.1:8888/static/"
+#cdn: "http://127.0.0.1:8888/cdn/"
+
+paginate: 5
+paginate_path: "/blog/page:num/"
+
+exclude: [
+  gulpfile.babel.js,
+  package.json,
+  README.md,
+  box-sizing.htc,
+  node_modules,
+  webpack.config.babel.js,
+  config.rb
+  _stylus,
+  cdn
+]
+keep_files: [
+  cdn
+]
+permalinks: pretty
+gems: ['jekyll-paginate', 'pry']
+# allow upcoming posts to be seen
+future: true

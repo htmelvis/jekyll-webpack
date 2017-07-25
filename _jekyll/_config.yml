@@ -1,0 +1,31 @@
+baseurl: ""
+request: ""
+cart: ""
+
+#build settings
+url: ""
+destination: _site
+static: ""
+cdn: ""
+foxyjs: ""
+foxy: ""
+
+paginate: 5
+paginate_path: "/articles/page:num/"
+exclude: [
+  gulpfile.babel.js,
+  package.json,
+  README.md,
+  box-sizing.htc,
+  node_modules,
+  webpack.config.babel.js,
+  config.rb
+  _stylus,
+  cdn,
+  style.html
+]
+keep_files: [
+  cdn
+]
+permalinks: pretty
+gems: [jekyll-paginate, jekyll-sitemap]

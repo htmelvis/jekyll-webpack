@@ -1,0 +1,410 @@
+ServerSignature Off
+AddDefaultCharset utf-8
+DefaultLanguage en
+FileETag none
+
+# Disable index views
+Options All -Indexes
+Options -MultiViews
+Options +FollowSymlinks
+
+# 404 Page Default
+ErrorDocument 404 /404.html
+
+# Canonical URL always with WWW
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^usnetting\.com [NC]
+  RewriteRule ^(.*)$ https://www.usnetting.com/$1 [R=301,NC]
+</IfModule>
+
+# Respell minor issues in URLs
+<IfModule mod_speling.c>
+  CheckSpelling On
+</IfModule>
+
+# Use HTTP Strict Transport Security to force client to
+# Use secure connections only
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains;" env=HTTPS
+
+# Allow cross origin requests. This is very important for using subdomains for sharding
+<IfModule mod_setenvif.c>
+    <IfModule mod_headers.c>
+        <FilesMatch "\.(gif|ico|jpe?g|png|svg|svgz|webp|woff|woff2|ttf|eot|otf)$">
+        SetEnvIf Origin ":" IS_CORS
+        Header set Access-Control-Allow-Origin "*" env=IS_CORS
+        </FilesMatch>
+    </IfModule>
+</IfModule>
+
+# force IE
+<IfModule mod_headers.c>
+    Header set X-UA-Compatible "IE=edge,chrome=1"
+    # `mod_headers` can't match based on the content-type, however, we only
+    # want to send this header for HTML pages and not for the other resources
+    <FilesMatch "\.(appcache|crx|css|eot|gif|htc|ico|jpe?g|js|m4a|m4v|manifest|mp4|oex|oga|ogg|ogv|otf|pdf|png|safariextz|svg|svgz|ttf|vcf|webapp|webm|webp|woff|xml|xpi)$">
+      Header unset X-UA-Compatible
+    </FilesMatch>
+</IfModule>
+
+# Force UTF-8 for certain file formats.
+<IfModule mod_mime.c>
+    AddCharset utf-8 .atom .css .js .json .rss .vtt .webapp .xml
+</IfModule>
+
+<FilesMatch "(^#\.*#|\.(htaccess|htpasswd|bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+#-----------------------------------------------------------------------------
+# | Compression
+#------------------------------------------------------------------------------
+
+<IfModule mod_deflate.c>
+    # Force compression for mangled headers.
+    # http://developer.yahoo.com/blogs/ydn/posts/2010/12/pushing-beyond-gzipping
+    <IfModule mod_setenvif.c>
+        <IfModule mod_headers.c>
+            SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s*,?\s*)+|[X~-]{4,13}$ HAVE_Accept-Encoding
+            RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
+        </IfModule>
+    </IfModule>
+
+    # Compress all output labeled with one of the following MIME-types
+    # (for Apache versions below 2.3.7, you don't need to enable `mod_filter`
+    #  and can remove the `<IfModule mod_filter.c>` and `</IfModule>` lines
+    #  as `AddOutputFilterByType` is still in the core directives).
+
+    <IfModule mod_filter.c>
+        FilterDeclare COMPRESS
+        FilterProvider COMPRESS DEFLATE resp=Content-Type $text/css
+        FilterProvider COMPRESS DEFLATE resp=Content-Type $text/html
+        FilterProvider COMPRESS DEFLATE resp=Content-Type $text/plain
+        FilterProvider COMPRESS DEFLATE resp=Content-Type $text/xml
+        FilterProvider COMPRESS DEFLATE resp=Content-Type $application/javascript
+        FilterChain COMPRESS
+        FilterProtocol COMPRESS DEFLATE change=yes;byteranges=no
+    </IfModule>
+    <IfModule !mod_filter.c>
+       AddOutputFilterByType DEFLATE text/css text/html text/plain text/xml
+       AddOutputFilterByType DEFLATE application/javascript
+    </IfModule>
+    <IfModule mod_setenvif.c>
+      BrowserMatch ^Mozilla/4 gzip-only-text/html
+      BrowserMatch ^Mozilla/4\.0[678] no-gzip
+      BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+      SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
+    </IfModule>
+    <IfModule mod_headers.c>
+      Header append Vary User-Agent env=!dont-vary
+      Header append Vary Accept-Encoding
+    </IfModule>
+</IfModule>
+
+<ifModule mod_gzip.c>
+    mod_gzip_on Yes
+    mod_gzip_dechunk Yes
+    mod_gzip_item_include file .(html?|txt|css|js|php|pl)$
+    mod_gzip_item_include handler ^cgi-script$
+    mod_gzip_item_include mime ^text/.*
+    mod_gzip_item_include mime ^application/x-javascript.*
+    mod_gzip_item_exclude mime ^image/.*
+    mod_gzip_item_exclude mime ^video/.*
+    mod_gzip_item_exclude rspheader ^Content-Encoding:.*gzip.*
+</ifModule>
+
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/xml "access plus 0 seconds"
+  ExpiresByType text/plain "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+  ExpiresByType application/rss+xml "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType image/svg+xml "access plus 1 week"
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+  ExpiresByType image/x-ico "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/jpe "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/jpg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/svg "access plus 1 month"
+  ExpiresByType video/ogg "access plus 1 month"
+  ExpiresByType video/mp4 "access plus 1 month"
+  ExpiresByType video/webm "access plus 1 month"
+  ExpiresByType audio/ogg "access plus 1 month"
+  ExpiresByType application/x-font-ttf "access plus 1 month"
+  ExpiresByType font/opentype "access plus 1 month"
+  ExpiresByType application/font-woff "access plus 1 month"
+  ExpiresByType application/pdf "access plus 1 month"
+  ExpiresByType application/vnd.ms-fontobject "access plus 1 month"
+
+  <IfModule mod_headers.c>
+    Header unset ETag
+    Header unset Pragma
+    Header unset Last-Modified
+    Header append Vary Accept-Encoding
+    Header append Cache-Control "public, no-transform, must-revalidate"
+    Header set Last-Modified "Tue, 14 Mar 2017 10:10:10 GMT"
+  </IfModule>
+</IfModule>
+
+# Added set ranges to allow videos to download in chunks
+<FilesMatch "\.(mp4|webm|ogg|m4v)$">
+    Header set Accept-Ranges none
+</FilesMatch>
+
+#MIMES
+<IfModule mod_mime.c>
+    # Audio
+    AddType audio/mp4                                   mp4 m4a f4a f4b
+    AddType audio/ogg                                   oga ogg
+    AddType audio/wav                                   wav
+
+    # JavaScript
+    # Normalize to standard type (it's sniffed in IE anyways):
+    # http://tools.ietf.org/html/rfc4329#section-7.2
+    AddType application/javascript                      js jsonp
+    AddType application/json                            json
+
+    # Video
+    AddType video/mp4                                   mp4 m4v
+    AddType video/ogg                                   ogv
+    AddType video/webm                                  webm webmv
+    AddType video/x-flv                                 flv
+
+    # Web fonts
+    AddType application/font-woff                       woff
+    AddType application/vnd.ms-fontobject               eot
+
+    # Browsers usually ignore the font MIME types and sniff the content,
+    # however, Chrome shows a warning if other MIME types are used for the
+    # following fonts.
+    AddType application/x-font-ttf                      ttc ttf
+    AddType font/opentype                               otf
+    AddType application/font-woff2                      woff2
+
+    # Make SVGZ fonts work on iPad:
+    # https://twitter.com/FontSquirrel/status/14855840545
+    AddType     image/svg+xml                           svg svgz
+    AddEncoding gzip                                    svgz
+
+    # Other
+    AddType application/octet-stream                    safariextz
+    AddType application/x-chrome-extension              crx
+    AddType application/x-opera-extension               oex
+    AddType application/x-shockwave-flash               swf
+    AddType application/x-web-app-manifest+json         webapp
+    AddType application/x-xpinstall                     xpi
+    AddType application/xml                             atom rdf rss xml
+    AddType image/webp                                  webp
+    AddType image/x-icon                                ico
+    AddType text/cache-manifest                         appcache manifest
+    AddType text/vtt                                    vtt
+    AddType text/x-component                            htc
+    AddType text/x-vcard                                vcf
+    AddType image/vnd.microsoft.icon .ico
+    # Add Polyfills for browser specific bugs
+    AddType text/x-component .htc
+</IfModule>
+
+# Serve Static Assets from Cookie-less Domains
+<IfModule mod_headers.c>
+  RequestHeader unset Cookie
+  Header unset Set-Cookie
+</IfModule>
+
+# Set Timezone
+<IfModule mod_env.c>
+  SetEnv TZ America/New_York
+</IfModule>
+
+# Admin Email default
+<IfModule mod_env.c>
+  SetEnv SERVER_ADMIN admin@usnetting.com
+</IfModule>
+
+Redirect 301 /netting.html https://www.usnetting.com/articles/2013/11/17/netting-guide.html
+Redirect 301 /rope-cargo-nets.html https://www.usnetting.com/commercial-netting/cargo-netting/rope-cargo-nets/
+## ROPE MOVE
+Redirect 301 /all-purpose-netting/bulk-catalog/canvas/ https://www.usnetting.com/canvas/
+Redirect 301 /all-purpose-netting/bulk-catalog/bulk-rope/ https://www.usnetting.com/rope/
+Redirect 301 /all-purpose-netting/bulk-catalog/kevlar-rope/ https://www.usnetting.com/rope/kevlar/
+Redirect 301 /all-purpose-netting/accessories/suspension-ropes/ https://www.usnetting.com/rope/
+Redirect 301 /all-purpose-netting/bulk-catalog/aircraft-cable/ https://www.usnetting.com/rope/aircraft-cable/
+Redirect 301 /all-purpose-netting/accessories/knotted-manila-rope/ https://www.usnetting.com/rope/manila-climbing-rope/
+Redirect 301 /safety-solutions/index.html https://www.usnetting.com/safety-solutions/loading-dock/
+Redirect 301 /enterprise/aviation-netting/ https://www.usnetting.com/aviation-netting/
+Redirect 301 /enterprise/military-netting/ https://www.usnetting.com/military-netting/
+Redirect 301 /commercial-netting/cargo-netting/custom-cargo-netting/guide/ https://www.usnetting.com/cargo-netting/
+Redirect 301 /custom-products/build-a-net/ https://custom.usnetting.com/
+Redirect 301 /HTML/baseball.html https://www.usnetting.com/sports-netting/baseball-netting/
+Redirect 301 /overstock-netting/ https://www.usnetting.com/overstock/
+Redirect 301 /HTML/cargo-web.html https://www.usnetting.com/cargo-netting/
+Redirect 301 /agricultural-pest/agricultural-netting/shade-cloth/ https://www.usnetting.com/shade-cloth/
+Redirect 301 /canvas/covers/ https://www.usnetting.com/tarps/
+Redirect 301 /canvas/tarps/ https://www.usnetting.com/tarps/
+### NEW URL CHANGE 31417 ####
+Redirect 301 /agricultural-pest/agricultural-netting/crop-protection/ https://www.usnetting.com/agricultural-netting/crop-protection/
+Redirect 301 /agricultural-pest/agricultural-netting/poultry-netting/ https://www.usnetting.com/agricultural-netting/poultry-netting/
+Redirect 301 /agricultural-pest/agricultural-netting/trellis-netting/ https://www.usnetting.com/agricultural-netting/trellis-netting/
+Redirect 301 /agricultural-pest/pest-control-netting/animal-capture/ https://www.usnetting.com/pest-control/animal-capture-nets/
+Redirect 301 /agricultural-pest/pest-control-netting/bird-control/ https://www.usnetting.com/pest-control/bird/
+Redirect 301 /agricultural-pest/pest-control-netting/bird-netting/ https://www.usnetting.com/pest-control/bird-netting/
+Redirect 301 /agricultural-pest/pest-control-netting/deer-fence/ https://www.usnetting.com/fence/deer-fence/
+Redirect 301 /agricultural-pest/pest-control-netting/deer-fence/installation/ https://www.usnetting.com/fence/deer-fence/installation/
+Redirect 301 /agricultural-pest/pest-control-netting/mosquito-netting/ https://www.usnetting.com/pest-control/mosquito-netting/
+Redirect 301 /agricultural-pest/pest-control-netting/pond-netting/ https://www.usnetting.com/pest-control/pond-netting/
+Redirect 301 /agricultural-pest/pest-control-netting/ https://www.usnetting.com/pest-control/
+Redirect 301 /agricultural-pest/agricultural-netting/ https://www.usnetting.com/agricultural-netting/
+Redirect 301 /agricultural-pest/ https://www.usnetting.com/agricultural-netting/
+# Redirect 301 /agricultural-netting/pest-control-netting/mosquito-netting/ https://www.usnetting.com/pest-control/mosquito-netting/
+Redirect 301 /all-purpose-netting/accessories/hardware/ https://www.usnetting.com/hardware/
+Redirect 301 /all-purpose-netting/accessories/rope-ladders/ https://www.usnetting.com/rope/ladders/
+Redirect 301 /all-purpose-netting/accessories/ https://www.usnetting.com/all-purpose-netting/
+Redirect 301 /all-purpose-netting/bulk-catalog/knotted-twine-netting/ https://www.usnetting.com/knotted-twine-netting/
+Redirect 301 /all-purpose-netting/bulk-catalog/ https://www.usnetting.com/all-purpose-netting/
+Redirect 301 /all-purpose-netting/cut-to-order-netting/ https://www.usnetting.com/cut-to-order-netting/
+Redirect 301 /all-purpose-netting/decorative-netting/clove-hitch-knot-guide/ https://www.usnetting.com/decorative-netting/knot-guide/
+Redirect 301 /all-purpose-netting/decorative-netting/nautical-rope-netting/ https://www.usnetting.com/decorative-netting/nautical-rope-netting/
+Redirect 301 /all-purpose-netting/decorative-netting/ https://www.usnetting.com/decorative-netting/
+Redirect 301 /all-purpose-netting/plastic-netting/ https://www.usnetting.com/plastic-netting/rolls/
+Redirect 301 /all-purpose-netting/raw-netting-materials/ https://www.usnetting.com/raw-netting/
+Redirect 301 /commercial-netting/barriers-containment/barrier-netting/installation/ https://www.usnetting.com/barrier-netting/installation/
+Redirect 301 /commercial-netting/barriers-containment/barrier-netting/quote/ https://custom.usnetting.com/quote?ref=Barrier%20Containment%20Redirect
+Redirect 301 /commercial-netting/barriers-containment/barrier-netting/safety-barrier-netting/ https://www.usnetting.com/barrier-netting/safety-barrier-netting/
+Redirect 301 /commercial-netting/barriers-containment/barrier-netting/containment-netting/ https://www.usnetting.com/cargo-netting/containment-netting/
+Redirect 301 /commercial-netting/barriers-containment/kevlar-netting/ https://www.usnetting.com/custom-products/kevlar/
+Redirect 301 /custom-products/kevlar-netting/ https://www.usnetting.com/custom-products/kevlar/
+Redirect 301 /commercial-netting/barriers-containment/barrier-netting/ https://www.usnetting.com/barrier-netting/
+Redirect 301 /barrier-netting/quote/ https://custom.usnetting.com/quote?ref=BarrierQuote
+Redirect 301 /commercial-netting/barriers-containment/ https://www.usnetting.com/barrier-netting/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-nets/quote/ https://custom.usnetting.com/quote?ref=Lifting%20Nets%20Redirect
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/body-guard/ https://www.usnetting.com/lifting-slings/body-guard/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/bridle-double/ https://www.usnetting.com/lifting-slings/bridle-double/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/bridle-single/ https://www.usnetting.com/lifting-slings/bridle-single/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/cargo/ https://www.usnetting.com/lifting-slings/cargo/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/chemical-info/ https://www.usnetting.com/lifting-slings/chemical-info/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/damage-inspection-guide/ https://www.usnetting.com/lifting-slings/damage-inspection-guide/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/drum/ https://www.usnetting.com/lifting-slings/drum/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/dual-eye/ https://www.usnetting.com/lifting-slings/dual-eye/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/endless/ https://www.usnetting.com/lifting-slings/endless/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/eye-eye-round/ https://www.usnetting.com/lifting-slings/eye-eye-round/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/eye-eye/ https://www.usnetting.com/lifting-slings/eye-eye/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/patch-eye/ https://www.usnetting.com/lifting-slings/patch-eye/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/reverse-eye/ https://www.usnetting.com/lifting-slings/reverse-eye/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/safety-tips/ https://www.usnetting.com/lifting-slings/safety-tips/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/seamed-round/ https://www.usnetting.com/lifting-slings/seamed-round/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/seamless-round/ https://www.usnetting.com/lifting-slings/seamless-round/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/sling-terminology/ https://www.usnetting.com/lifting-slings/sling-terminology/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/triangle-choker/ https://www.usnetting.com/lifting-slings/triangle-choker/
+Redirect 301 /cargo-lifting-slings/chemical-info/ https://www.usnetting.com/lifting-slings/chemical-info/
+Redirect 301 /cargo-lifting-slings/sling-terminology/ https://www.usnetting.com/lifting-slings/sling-terminology/
+Redirect 301 /cargo-lifting-slings/safety-tips/ https://www.usnetting.com/lifting-slings/safety-tips/
+Redirect 301 /cargo-lifting-slings/damage-inspection-guide/ https://www.usnetting.com/lifting-slings/damage-inspection-guide/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-slings/ https://www.usnetting.com/lifting-slings/
+Redirect 301 /commercial-netting/cargo-netting/cargo-lifting-nets/ https://www.usnetting.com/cargo-netting/cargo-lifting-nets/
+Redirect 301 /commercial-netting/cargo-netting/custom-cargo-netting/ https://www.usnetting.com/cargo-netting/custom-cargo-netting/
+Redirect 301 /commercial-netting/cargo-netting/custom-cargo-netting/hardware/ https://www.usnetting.com/cargo-netting/custom-cargo-netting/hardware/
+Redirect 301 /commercial-netting/cargo-netting/custom-cargo-netting/quote/ https://custom.usnetting.com/quote?ref=Cargo%20Netting%20Redirect
+Redirect 301 /commercial-netting/cargo-netting/flatbed-truck-cargo-nets/ https://www.usnetting.com/cargo-netting/flatbed-truck-cargo-nets/
+Redirect 301 /commercial-netting/cargo-netting/rolls/ https://www.usnetting.com/cargo-netting/rolls/
+Redirect 301 /commercial-netting/cargo-netting/rope-cargo-nets/quote/ https://custom.usnetting.com/quote?ref=Rope%20Cargo%20Redirect
+Redirect 301 /commercial-netting/cargo-netting/rope-cargo-nets/ https://www.usnetting.com/cargo-netting/rope-cargo-nets/
+Redirect 301 /commercial-netting/cargo-netting/ https://www.usnetting.com/cargo-netting/
+Redirect 301 /commercial-netting/commercial-netting-solutions/covers-tarps/ https://www.usnetting.com/tarps/
+Redirect 301 /commercial-netting/commercial-netting-solutions/dumpster-covers/ https://www.usnetting.com/commercial-netting/dumpster-covers/
+Redirect 301 /commercial-netting/commercial-netting-solutions/insulation-netting/ https://www.usnetting.com/safety-netting/construction/insulation-netting/
+Redirect 301 /commercial-netting/commercial-netting-solutions/privacy-fence/ https://www.usnetting.com/fence/privacy-fence/
+Redirect 301 /commercial-netting/commercial-netting-solutions/privacy-fence/quote/ https://custom.usnetting.com/quote?ref=Privacy%20Fence%20Redirect
+Redirect 301 /commercial-netting/commercial-netting-solutions/ https://www.usnetting.com/commercial-netting/
+Redirect 301 /safety-netting/construction/debris-netting/ https://www.usnetting.com/safety-netting/debris-netting/
+Redirect 301 /safety-netting/construction/debris-netting/quote/ https://custom.usnetting.com/quote?ref=Debris%20Netting%20Redirect
+Redirect 301 /safety-netting/construction/debris-netting/rolls/ https://www.usnetting.com/safety-netting/debris-netting/rolls/
+Redirect 301 /safety-netting/construction/guardrail-netting/ https://www.usnetting.com/safety-netting/guardrail-netting/
+Redirect 301 /safety-netting/construction/personnel-safety-netting/ https://www.usnetting.com/safety-netting/fall-safety-netting/
+Redirect 301 /safety-netting/debris-netting/panels/ https://www.usnetting.com/safety-netting/debris-netting/
+Redirect 301 /safety-netting/debris-netting/quote/ https://custom.usnetting.com/quote?ref=DebrisQuote
+Redirect 301 /safety-netting/construction/safety-fence/ https://www.usnetting.com/fence/safety-fence/
+Redirect 301 /safety-netting/construction/steel-netting-guide/ https://www.usnetting.com/safety-netting/steel-netting/guide/
+Redirect 301 /safety-netting/construction/steel-netting/ https://www.usnetting.com/safety-netting/steel-netting/
+Redirect 301 /safety-netting/construction/steel-netting/quote/ https://custom.usnetting.com/quote?ref=Steel%20Netting%20Redirect
+Redirect 301 /safety-netting/construction/steel-netting/ https://www.usnetting.com/safety-netting/steel-netting/
+Redirect 301 /safety-netting/drone/drone-safety-nets/ https://www.usnetting.com/drone-netting/drone-safety-nets/
+Redirect 301 /safety-netting/drone-netting/drone-safety-nets/ https://www.usnetting.com/drone-netting/drone-safety-nets/
+Redirect 301 /safety-netting/drop-testing/ https://www.usnetting.com/safety-netting/testing/
+Redirect 301 /safety-netting/protective-net-panels/ https://www.usnetting.com/drone-netting/panels/
+Redirect 301 /safety-netting/warehouse/hatch-netting/ https://www.usnetting.com/safety-netting/hatch-netting/
+Redirect 301 /safety-netting/warehouse/rackguard/ https://www.usnetting.com/safety-netting/rack-safety-netting/
+Redirect 301 /enterprise/construction-safety-netting/ https://www.usnetting.com/safety-netting/construction/
+Redirect 301 /safety-netting/warehouse/welding-curtains/ https://www.usnetting.com/safety-solutions/welding-curtains/
+Redirect 301 /sports-netting/baseball-netting/batting-cages/ https://www.usnetting.com/sports-netting/batting-cages/
+Redirect 301 /sports-netting/baseball-netting/custom-baseball-netting/ https://www.usnetting.com/sports-netting/custom-baseball-netting/
+Redirect 301 /sports-netting/photos/ https://www.usnetting.com/sports-netting/
+Redirect 301 /sports-netting/spectator-safety-netting/gym-curtains/ https://www.usnetting.com/spectator-safety/gym-curtains/
+Redirect 301 /sports-netting/spectator-safety-netting/hockey-arena-netting/ https://www.usnetting.com/spectator-safety/hockey-arena-netting/
+Redirect 301 /sports-netting/spectator-safety-netting/ https://www.usnetting.com/spectator-safety/
+Redirect 301 /plastic-netting-fence/plastic-netting/ https://www.usnetting.com/plastic-netting/
+Redirect 301 /commercial-netting/fence/barrier-fence/ https://www.usnetting.com/fence/barrier-fence/
+Redirect 301 /commercial-netting/fence/crowd-control/ https://www.usnetting.com/fence/crowd-control/
+Redirect 301 /commercial-netting/fence/plastic-snow-fence/ https://www.usnetting.com/fence/snow-fence/plastic/
+Redirect 301 /fence/plastic-snow-fence/ https://www.usnetting.com/fence/snow-fence/plastic/
+Redirect 301 /commercial-netting/fence/snow-fence-installation/ https://www.usnetting.com/fence/snow-fence/installation/
+Redirect 301 /commercial-netting/fence/wooden-snow-fence/ https://www.usnetting.com/fence/snow-fence/wooden/
+Redirect 301 /fence/wooden-snow-fence/ https://www.usnetting.com/fence/snow-fence/wooden/
+Redirect 301 /commercial-netting/fence/ https://www.usnetting.com/fence/
+Redirect 301 /commercial-netting/fence https://www.usnetting.com/fence/
+Redirect 301 /custom-products/capabilities/customer-list/ https://www.usnetting.com/our-company/
+Redirect 301 /custom-products/capabilities/facility/ https://www.usnetting.com/our-company/
+Redirect 301 /custom-products/capabilities/statement/ https://www.usnetting.com/our-company/
+Redirect 301 /custom-products/capabilities/featured-jobs/ https://www.usnetting.com/our-company/featured-jobs/
+Redirect 301 /custom-products/capabilities/ https://www.usnetting.com/our-company/
+Redirect 301 /custom-products/exclusive/ez-barrier-nets/ https://www.usnetting.com/barrier-netting/ez-barrier-nets/
+Redirect 301 /custom-products/exclusive/ez-barrier-nets/four-sided/ https://www.usnetting.com/barrier-netting/ez-barrier-nets/
+Redirect 301 /custom-products/exclusive/ez-barrier-nets/quote/ https://custom.usnetting.com/quote?ref=Barrier%20Netting%20Redirect
+Redirect 301 /custom-products/exclusive/ez-barrier-nets/standard/ https://www.usnetting.com/barrier-netting/ez-barrier-nets/
+Redirect 301 /custom-products/exclusive/ez-barrier-nets/two-sided/ https://www.usnetting.com/barrier-netting/ez-barrier-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/catalog/ https://www.usnetting.com/safety-solutions/loading-dock/catalog/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/comparison/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/instructions/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/installation-guide/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/post-mounted/ https://www.usnetting.com/safety-solutions/post-mounted-safety-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/products/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/quote/ https://custom.usnetting.com/quote?ref=Loading%20Dock%20Redirect
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/video/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/video/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/wall-mounted/ https://www.usnetting.com/safety-solutions/wall-mounted-safety-nets/
+Redirect 301 /safety-solutions/loading-dock-safety-nets/wall-mounted/ https://www.usnetting.com/safety-solutions/wall-mounted-safety-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/warehouse-barrier-system/ https://www.usnetting.com/barrier-netting/warehouse-system/
+Redirect 301 /safety-solutions/loading-dock-safety-nets/floor-mounted/ https://www.usnetting.com/safety-solutions/post-mounted-safety-nets/
+Redirect 301 /custom-products/exclusive/loading-dock-safety-nets/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/
+Redirect 301 /cargo-netting/custom-cargo-netting/quote/ https://custom.usnetting.com/quote?ref=CargoQuote
+Redirect 301 /custom-products/exclusive/tailgate-nets/ https://www.usnetting.com/cargo-netting/tailgate-nets/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/atv-nets/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/atv-nets/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/cargo-carrier-nets/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/cargo-carrier-nets/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/grommets/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/grommets/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/loop-tie-down/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/loop-tie-down/
+Redirect 301 /custom-products/exclusive/truck-bed-cargo-nets/ https://www.usnetting.com/cargo-netting/truck-bed-cargo-nets/
+Redirect 301 /plastic-netting-fence/fence/ https://www.usnetting.com/fence/
+Redirect 301 /plastic-netting-fence/ https://www.usnetting.com/plastic-netting/
+Redirect 301 /commercial-netting/commercial-netting-solutions/pallet-netting/ https://www.usnetting.com/commercial-netting/tubular-mesh/
+Redirect 301 /custom-products/quote/ https://custom.usnetting.com/quote?ref=General%20Quote%20Redirect
+Redirect 301 /shade-cloth/quote/ https://custom.usnetting.com/quote?ref=Shade%20Cloth%20Redirect
+Redirect 301 /safety-solutions/defender-gate/install-guide/ https://www.usnetting.com/safety-solutions/defender-gate/installation-guide/
+Redirect 301 /safety-solutions/loading-dock-safety-nets/catalog/ https://www.usnetting.com/safety-solutions/loading-dock/catalog/
+Redirect 301 /safety-solutions/loading-dock-safety-nets/products/ https://www.usnetting.com/safety-solutions/loading-dock-safety-nets/
+# Link follows and 301 fixes for 33117
+Redirect 301 /HTML/nettingSteel.html https://www.usnetting.com/safety-netting/steel-netting/
+Redirect 301 /spectatorsafety.html https://www.usnetting.com/spectator-safety/
+Redirect 301 /articles/2013/10/09/four-loading-dock-safety-dangers-and-precautions-for-prevention.html https://www.usnetting.com/articles/2015/06/07/loading-dock-safety.html
+Redirect 301 /HTML/shade-cloth.html https://www.usnetting.com/shade-cloth/
+Redirect 301 /HTML/cargo.html https://www.usnetting.com/cargo-netting/
+Redirect 301 /HTML/netDebris.html https://www.usnetting.com/safety-netting/debris-netting/
+Redirect 301 /HTML/safety-barrier.html https://www.usnetting.com/barrier-netting/safety-barrier-netting/
+Redirect 301 /commercial-netting/pallet-netting/ https://www.usnetting.com/commercial-netting/tubular-mesh/
